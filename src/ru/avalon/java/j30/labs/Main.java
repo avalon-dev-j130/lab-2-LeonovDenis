@@ -22,6 +22,8 @@ import java.util.Properties;
  */
 public class Main {
 
+    private static final String DB_CONNECTION_STRING = "jdbc:derby://localhost:1527/sample";
+    
     /**
      * Точка входа в приложение
      *
@@ -33,10 +35,12 @@ public class Main {
          */
 
         try (Connection connection = getConnection()) {
+            printAllCodes(connection);
+            
             ProductCode code = new ProductCode("MO", 'N', "Movies");
             code.save(connection);
             printAllCodes(connection);
-
+            
             code.setCode("MV");
             code.save(connection);
             printAllCodes(connection);
@@ -57,6 +61,7 @@ public class Main {
         for (ProductCode code : codes) {
             System.out.println(code);
         }
+        System.out.println("=====");
     }
 
     /**
@@ -68,9 +73,8 @@ public class Main {
         /*
          * TODO #02 Реализуйте метод getUrl
          */
-        String name = "sample";
 
-        return "jdbc:derby://localhost:1527/" + name;
+        return DB_CONNECTION_STRING;
     }
 
     /**
