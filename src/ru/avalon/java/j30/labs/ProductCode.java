@@ -53,17 +53,11 @@ public class ProductCode {
         /*
          * TODO #05 реализуйте конструктор класса ProductCode
          */
+        code = set.getString("PROD_CODE");
 
-        if (set.next()) {
-            code = set.getString("code");
-
-            char[] toCharArray = set.getString("discountCode").toCharArray();
-            discountCode = toCharArray[0];
-            description = set.getString("description");
-
-        } else {
-            System.err.println("Empty Table");
-        }
+        char[] toCharArray = set.getString("DISCOUNT_CODE").toCharArray();
+        discountCode = set.getString("DISCOUNT_CODE").charAt(0);
+        description = set.getString("DESCRIPTION");
 
     }
 
@@ -153,7 +147,7 @@ public class ProductCode {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final ProductCode other = (ProductCode) obj;
+        ProductCode other = (ProductCode) obj;
         if (!Objects.equals(this.code, other.code)
                 || !Objects.equals(this.description, other.description)
                 || !Objects.equals(this.discountCode, other.discountCode)) {
@@ -172,8 +166,8 @@ public class ProductCode {
         /*
          * TODO #08 Реализуйте метод toString
          */
-        return "Product: " + code + "|with discount: "
-                + discountCode + "|description" + description;
+        return "Product: " + code + " | with discount: "
+                + discountCode + " | description: " + description;
     }
 
     /**
@@ -189,9 +183,7 @@ public class ProductCode {
          * TODO #09 Реализуйте метод getSelectQuery
          */
         String sql = "SELECT * FROM PRODUCT_CODE";
-        try (PreparedStatement pstate = connection.prepareStatement(sql)) {
-            return pstate;
-        }
+        return connection.prepareStatement(sql);
 
     }
 
@@ -208,9 +200,9 @@ public class ProductCode {
          * TODO #10 Реализуйте метод getInsertQuery
          */
         String sql = "INSERT INTO PRODUCT_CODE VALUES (?,?,?)";
-        try (PreparedStatement pstate = connection.prepareStatement(sql)) {
-            return pstate;
-        }
+        PreparedStatement pstate = connection.prepareStatement(sql);
+        return pstate;
+
     }
 
     /**
@@ -224,10 +216,11 @@ public class ProductCode {
         /*
          * TODO #11 Реализуйте метод getUpdateQuery
          */
-        String sql = "UPDATE PRODUCT_CODE SET code=?,discountCode=?,description = ?";
-        try (PreparedStatement pstate = connection.prepareStatement(sql)) {
-            return pstate;
-        }
+        String sql = "UPDATE PRODUCT_CODE SET DISCOUNT_CODE=? ,DESCRIPTION = ? where PROD_CODE = ?";
+
+        PreparedStatement pstate = connection.prepareStatement(sql);
+        return pstate;
+
     }
 
     /**
@@ -244,6 +237,7 @@ public class ProductCode {
          * TODO #12 Реализуйте метод convert
          */
         Collection<ProductCode> col = new LinkedList<>();
+
         while (set.next()) {
             ProductCode prod = new ProductCode(set);
             col.add(prod);
@@ -268,23 +262,28 @@ public class ProductCode {
          */
         //если нет записи то добавить
         Collection<ProductCode> allPro = all(connection);
-        for (ProductCode pc : allPro) {
 
-            if (Objects.equals(this, pc)) {
-                try (PreparedStatement statement = getUpdateQuery(connection)) {
-                    statement.execute();
-                    return;
-                }
+
+        if (allPro.contains(this)) {
+            try (PreparedStatement statement = getUpdateQuery(connection)) {
+                statement.setString(1, String.valueOf(getDiscountCode()));
+                statement.setString(2, getDescription());                
+                statement.setString(3, getCode());
+                statement.executeUpdate();
+                
+                return;
             }
         }
+        
         try (PreparedStatement statement = getInsertQuery(connection)) {
             statement.setString(1, getCode());
             statement.setString(2, String.valueOf(getDiscountCode()));
             statement.setString(3, getDescription());
 
-            statement.executeQuery();
-
+            statement.executeUpdate();
+                
         }
+
     }
 
     /**
