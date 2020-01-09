@@ -128,7 +128,7 @@ public class ProductCode {
         /*
          * TODO #06 Реализуйте метод hashCode
          */
-        return Objects.hash(code, description, discountCode);
+        return Objects.hash(code);
     }
 
     /**
@@ -151,9 +151,7 @@ public class ProductCode {
             return false;
         }
         ProductCode other = (ProductCode) obj;
-        if (!Objects.equals(this.code, other.code)
-                || !Objects.equals(this.description, other.description)
-                || !Objects.equals(this.discountCode, other.discountCode)) {
+        if (!Objects.equals(this.code, other.code)) {
             return false;
         }
         return true;
