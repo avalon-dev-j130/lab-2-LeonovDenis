@@ -1,5 +1,10 @@
 package ru.avalon.java.j30.labs;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -54,8 +59,6 @@ public class ProductCode {
          * TODO #05 реализуйте конструктор класса ProductCode
          */
         code = set.getString("PROD_CODE");
-
-        char[] toCharArray = set.getString("DISCOUNT_CODE").toCharArray();
         discountCode = set.getString("DISCOUNT_CODE").charAt(0);
         description = set.getString("DESCRIPTION");
 
@@ -177,14 +180,14 @@ public class ProductCode {
      * @param connection действительное соединение с базой данных
      * @return Запрос в виде объекта класса {@link PreparedStatement}
      * @throws java.sql.SQLException
+     * @throws java.io.IOException
      */
-    public static PreparedStatement getSelectQuery(Connection connection) throws SQLException {
+    public static PreparedStatement getSelectQuery(Connection connection) throws SQLException, IOException {
         /*
          * TODO #09 Реализуйте метод getSelectQuery
          */
-        String sql = "SELECT * FROM PRODUCT_CODE";
+        String sql = getQuery("getSelectQuery");
         return connection.prepareStatement(sql);
-
     }
 
     /**
@@ -194,15 +197,14 @@ public class ProductCode {
      * @param connection действительное соединение с базой данных
      * @return Запрос в виде объекта класса {@link PreparedStatement}
      * @throws java.sql.SQLException
+     * @throws java.io.IOException
      */
-    public static PreparedStatement getInsertQuery(Connection connection) throws SQLException {
+    public static PreparedStatement getInsertQuery(Connection connection) throws SQLException, IOException {
         /*
          * TODO #10 Реализуйте метод getInsertQuery
          */
-        String sql = "INSERT INTO PRODUCT_CODE VALUES (?,?,?)";
-        PreparedStatement pstate = connection.prepareStatement(sql);
-        return pstate;
-
+        String sql = getQuery("getInsertQuery");
+        return connection.prepareStatement(sql);
     }
 
     /**
@@ -211,16 +213,15 @@ public class ProductCode {
      *
      * @param connection действительное соединение с базой данных
      * @return Запрос в виде объекта класса {@link PreparedStatement}
+     * @throws java.sql.SQLException
+     * @throws java.io.IOException
      */
-    public static PreparedStatement getUpdateQuery(Connection connection) throws SQLException {
+    public static PreparedStatement getUpdateQuery(Connection connection) throws SQLException, IOException {
         /*
          * TODO #11 Реализуйте метод getUpdateQuery
          */
-        String sql = "UPDATE PRODUCT_CODE SET DISCOUNT_CODE=? ,DESCRIPTION = ? where PROD_CODE = ?";
-
-        PreparedStatement pstate = connection.prepareStatement(sql);
-        return pstate;
-
+        String sql = getQuery("getUpdateQuery");
+        return connection.prepareStatement(sql);
     }
 
     /**
@@ -237,7 +238,6 @@ public class ProductCode {
          * TODO #12 Реализуйте метод convert
          */
         Collection<ProductCode> col = new LinkedList<>();
-
         while (set.next()) {
             ProductCode prod = new ProductCode(set);
             col.add(prod);
@@ -255,35 +255,29 @@ public class ProductCode {
      *
      * @param connection действительное соединение с базой данных
      * @throws java.sql.SQLException
+     * @throws java.io.IOException
      */
-    public void save(Connection connection) throws SQLException {
+    public void save(Connection connection) throws SQLException, IOException {
         /*
          * TODO #13 Реализуйте метод convert
          */
         //если нет записи то добавить
         Collection<ProductCode> allPro = all(connection);
-
-
         if (allPro.contains(this)) {
             try (PreparedStatement statement = getUpdateQuery(connection)) {
                 statement.setString(1, String.valueOf(getDiscountCode()));
-                statement.setString(2, getDescription());                
+                statement.setString(2, getDescription());
                 statement.setString(3, getCode());
                 statement.executeUpdate();
-                
                 return;
             }
         }
-        
         try (PreparedStatement statement = getInsertQuery(connection)) {
             statement.setString(1, getCode());
             statement.setString(2, String.valueOf(getDiscountCode()));
             statement.setString(3, getDescription());
-
             statement.executeUpdate();
-                
         }
-
     }
 
     /**
@@ -293,11 +287,35 @@ public class ProductCode {
      * @param connection действительное соединение с базой данных
      * @return коллекция объектов типа {@link ProductCode}
      * @throws SQLException
+     * @throws java.io.IOException
      */
-    public static Collection<ProductCode> all(Connection connection) throws SQLException {
+    public static Collection<ProductCode> all(Connection connection) throws SQLException, IOException {
         try (PreparedStatement statement = getSelectQuery(connection)) {
             try (ResultSet result = statement.executeQuery()) {
                 return convert(result);
+            }
+        }
+    }
+
+    /**
+     * Возвращает текст запроса из файла sql
+     *
+     * @param path наименование файла sql
+     * @return текст запроса
+     * @throws IOException
+     */
+    public static String getQuery(String path) throws IOException {
+        path = "/resource/" + path + ".sql"; //путь к файлу sql запроса
+        try (InputStream stream = ProductCode.class.getResourceAsStream(path)) {//создаём поток из файла
+            try (Reader reader = new InputStreamReader(stream)) {
+                try (BufferedReader buff = new BufferedReader(reader)) {
+                    StringBuilder builder = new StringBuilder();
+                    String line;
+                    while ((line = buff.readLine()) != null) {//чтаем всё из файла построчно
+                        builder.append(line);
+                    }
+                    return builder.toString();
+                }
             }
         }
     }

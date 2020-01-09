@@ -1,7 +1,5 @@
 package ru.avalon.java.j30.labs;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -22,25 +20,28 @@ import java.util.Properties;
  */
 public class Main {
 
-    private static final String DB_CONNECTION_STRING = "jdbc:derby://localhost:1527/sample";
-    
+    private static final Properties CONFIG = new Properties();
+    private static final String RESOURCE = "/resource/url.properties";
+
     /**
      * Точка входа в приложение
      *
      * @param args the command line arguments
+     * @throws java.sql.SQLException
+     * @throws java.io.IOException
      */
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws SQLException, IOException {
         /*
          * TODO #01 Подключите к проекту все библиотеки, необходимые для соединения с СУБД.
          */
 
         try (Connection connection = getConnection()) {
             printAllCodes(connection);
-            
+
             ProductCode code = new ProductCode("MO", 'N', "Movies");
             code.save(connection);
             printAllCodes(connection);
-            
+
             code.setCode("MV");
             code.save(connection);
             printAllCodes(connection);
@@ -55,12 +56,13 @@ public class Main {
      *
      * @param connection действительное соединение с базой данных
      * @throws SQLException
+     * @throws IOException
      */
-    private static void printAllCodes(Connection connection) throws SQLException {
+    private static void printAllCodes(Connection connection) throws SQLException, IOException {
         Collection<ProductCode> codes = ProductCode.all(connection);
-        for (ProductCode code : codes) {
+        codes.forEach((code) -> {
             System.out.println(code);
-        }
+        });
         System.out.println("=====");
     }
 
@@ -73,8 +75,10 @@ public class Main {
         /*
          * TODO #02 Реализуйте метод getUrl
          */
-
-        return DB_CONNECTION_STRING;
+        return CONFIG.getProperty("db.driver") + "://"
+                + CONFIG.getProperty("db.host") + ":"
+                + CONFIG.getProperty("db.port") + "/"
+                + CONFIG.getProperty("db.name");
     }
 
     /**
@@ -84,23 +88,16 @@ public class Main {
      * password
      */
     private static Properties getProperties() {
+
         /*
          * TODO #03 Реализуйте метод getProperties
          */
-        String pathroot=Thread.currentThread().getContextClassLoader()
-                                              .getResource("").getPath();
-        String path = pathroot+"resource/url.properties";
-        Properties prop = new Properties();
-        try (InputStream fis = new FileInputStream(path)) {
-
-            prop.load(fis); 
-        } catch (FileNotFoundException e) {
-            System.err.println("Properties not load");
+        try (InputStream stream = Main.class.getResourceAsStream(RESOURCE)) {
+            CONFIG.load(stream);
         } catch (IOException e) {
             System.err.println("Properties not found");
         }
-        
-        return prop;
+        return CONFIG;
     }
 
     /**
@@ -113,10 +110,10 @@ public class Main {
         /*
          * TODO #04 Реализуйте метод getConnection
          */
-        String url=getUrl();
-        String user=getProperties().getProperty("db.user");
-        String password=getProperties().getProperty("db.password");
-        
+        getProperties();
+        String url = getUrl();
+        String user = CONFIG.getProperty("db.user");
+        String password = CONFIG.getProperty("db.password");
         return DriverManager.getConnection(url, user, password);
     }
 
